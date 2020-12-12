@@ -1,0 +1,76 @@
+// Desenvolvido por
+// https://github.com/smota
+//
+// 05/12/2020
+//
+// Regra baseada no setup de compra na MM21 Giba
+//
+//
+
+input
+  MM_Periodos(21);
+  QuantidadePapeis(100);
+  GainRatio(5);
+var
+  valorMedia : Float; 
+  gainPrice : Float;
+  lossPrice : Float;
+  positionPrice : Float;
+  sellOnPrice : Float;
+  buyOnOpen : Boolean; 
+  sellNext : Boolean;
+  openPosition : Integer;
+  ano : Integer;
+begin
+  valorMedia := Media(MM_Periodos, Close);
+
+  if (buyOnOpen) then 
+  begin
+    if( (Open >= positionPrice) AND (Open > valorMedia) ) then 
+    begin
+    
+      positionPrice := Open;
+
+      lossPrice := Low[1];
+      gainPrice := positionPrice + ( (positionPrice-lossPrice) * GainRatio);
+
+      SendOrder(osBuy, otLimit, QuantidadePapeis, positionPrice, positionPrice+50);
+      //BuyAtMarket(QuantidadePapeis);
+
+    end; //Open to buy
+    
+    buyOnOpen := False;
+
+  end; //buyOnOpen
+
+  if (IsBought) then
+  begin
+      openPosition := BuyPosition;
+
+      if( (gainPrice > Low) AND (gainPrice < High) ) then 
+      begin
+          sellOnPrice := gainPrice;
+          SendOrder(osSell, otLimit, QuantidadePapeis, sellOnPrice, sellOnPrice);
+          //SellToCoverAtMarket;
+          positionPrice := 0;
+      end                         
+      else if ( (IsBought) AND (lossPrice > Low) AND (lossPrice < High) ) then
+      begin
+        sellOnPrice := lossPrice;
+        SendOrder(osSell, otLimit, QuantidadePapeis, sellOnPrice, sellOnPrice);
+        //SellToCoverAtMarket;
+        positionPrice := 0;
+      end;
+  end; //IsBought
+
+  if( (NOT IsBought) AND (Low < valorMedia) AND
+      (valorMedia < Close ) AND (valorMedia < Open) //CORPO ACIMA DA MEDIA
+  ) 
+  then
+  begin
+       PaintBar(clFuchsia);
+       positionPrice := valorMedia;
+       buyOnOpen := True;
+  end;
+ 
+end; //Close     

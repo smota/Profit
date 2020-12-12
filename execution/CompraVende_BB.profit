@@ -1,0 +1,145 @@
+// Desenvolvido por
+// https://github.com/smota
+//
+// 12/12/2020
+//
+// Regra baseada no indicador Bollinger Band Width
+// Referência:
+//
+//
+
+input
+  MM_Periodos(21);
+  BB_Desvio(2.0);
+  BB_Minimo(40);
+  BB_Maximo(90);
+  LimiteOperacao(1730);
+  TamanhoMao(100);
+
+var
+  fStopOperation : Boolean;
+  fProntoCompra : Boolean;
+  fProntoVenda : Boolean;
+  fBreak : Boolean;
+
+  BB_Atual : Float;
+  BB_Anterior : Float;
+
+  vMM : Float;
+
+begin
+
+  if( (Year(Date) = 2020) AND (Month(Date) = 12) AND (DayOfMonth(Date) = 9) ) then
+  begin
+     fBreak := True;
+  end;
+
+  //FINALIZA OPERACOES
+  if ( (LimiteOperacao > 0) AND (Time > LimiteOperacao) ) then
+  begin
+     fStopOperation := True;
+  end
+  else
+  begin
+     fStopOperation := False;
+  end;    
+  //FINALIZA OPERACOES                                           
+
+  //HORARIO DE OPERACAO
+  if ( (NOT fStopOperation) ) then
+  begin
+      BB_Atual := BollingerBPerc(BB_Desvio, MM_Periodos, 0);
+
+      //INICIA BB
+      if ( (BB_Atual > 0) AND (BB_Anterior = 0) ) then
+        BB_Anterior := BB_Atual;
+      //INICIA BB
+
+      //SAI DA OPERACAO
+      if ( (IsBought) OR (IsSold) ) then
+      begin
+          if ( IsBought AND fProntoVenda ) then
+          begin
+              SendOrder(osSell, otLimit, TamanhoMao, Close, Close + 5);
+          end;
+
+          if ( IsSold AND fProntoCompra ) then
+          begin
+              SendOrder(osBuy, otLimit, TamanhoMao, Close, Close - 5);
+          end;
+      end;
+      //SAI DA OPERACAO
+
+
+      //PREPARA OPERACAO
+      if ( (NOT IsBought) AND (NOT IsSold) ) then
+      begin
+
+         //CANCELA STOPLOSS
+         if ( HasPendingOrders ) then
+             CancelPendingOrders;
+         //CANCELA STOPLOSS
+
+         //COMPRA
+         if ( fProntoCompra AND (BB_Anterior < BB_Atual) ) then
+         begin
+             SendOrder(osBuy, otStopLimit, TamanhoMao, Close, Close - 5); 
+             SendOrder(osSell, otStopLimit, TamanhoMao, Low+5, Low + 5);
+         end;
+         //COMPRA
+
+         //VENDA
+         if ( fProntoVenda AND (BB_Anterior > BB_Atual) ) then
+         begin
+             SendOrder(osSell, otStopLimit, TamanhoMao, Close, Close + 5);
+             SendOrder(osBuy, otStopLimit, TamanhoMao, High-5, High - 5);
+         end;
+         //VENDA
+      end;
+      //ENTRA NA OPERACAO
+
+      //VALIDA COMPRA
+      if ( BB_Atual < BB_Minimo )then 
+      begin
+          fProntoCompra := True;
+      end
+      else
+      begin
+          fProntoCompra := False;
+      end;
+      //VALIDA COMPRA
+      
+      //VALIDA VENDA
+      if ( BB_Atual > BB_Maximo )then 
+      begin
+          fProntoVenda := True;
+      end
+      else
+      begin
+          fProntoVenda := False;
+      end;
+      //VALIDA VENDA
+
+
+      //PROXIMA VALIDACAO
+      BB_Anterior := BB_Atual;
+
+  end;
+  //HORARIO DE OPERACAO
+
+  //FECHA OPERACAO NO DIA
+  if ( (IsBought OR IsSold) AND (fStopOperation) ) then
+  begin
+      PaintBar(clGray);
+      ClosePosition;
+
+      //if ( IsBought ) then
+      //    SellToCoverAtMarket(TamanhoMao);
+
+      //if ( IsSold ) then
+      //    BuyToCoverAtMarket(TamanhoMao);
+
+  end;
+  //FECHA OPERACAO NO DIA 
+ 
+end; //Close     

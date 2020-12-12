@@ -1,0 +1,23 @@
+// Desenvolvido por
+// https://gist.github.com/smota
+//
+// 03/12/2020
+//
+// Identifica formação de padrões HANGING MAN ou HAMMER
+// https://www.investopedia.com/terms/h/hangingman.asp
+//
+// Pode ser usada para screening e coloração
+//
+input
+  TamMinimoCorpo(14); // No tick do papel (i.e: centavos, etc.)
+  FatorSombra(3); // 3 Recomendado pela literatura
+var
+  oHammer     : Integer;
+  oHangingMan : integer;
+begin
+  if ((C_Hammer_HangingMan(TamMinimoCorpo,3,oHammer,oHangingMan) > 0)) then
+    begin
+      PaintBar(clFuchsia);
+      Select;
+    end;
+end;

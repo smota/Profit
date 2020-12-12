@@ -1,0 +1,37 @@
+// Desenvolvido por
+// SAMUEL MOTA <samuelmota@gmail.com>
+//
+// 02/12/2020
+//
+// Regra baseada no vídeo:
+// https://www.youtube.com/watch?v=Qn3NGlRf6_A
+//
+// Identifica oportunidades de entrada por
+// BANDAS DE BOLLINGER
+//
+// Recomendação de Execução:
+//  SWING: 1 Dia
+//  DAY: 15 Minutos
+//
+
+input
+  Desvios(2);
+  MM(14);  //SETUP GIBA
+  TipoMM(0); 
+    // 0 - Aritimetica 
+    // 1 - Exponencial
+    // 2 - Welles Wilder
+    // 3 - Ponderada
+var
+  bandSup : Float;
+  bandInf : Float;
+
+begin
+  bandSup := BollingerBands(Desvios, MM, TipoMM)|0|;
+  bandInf := BollingerBands(Desvios, MM, TipoMM)|1|; 
+
+  if ( (Close > bandSup) OR (Close < bandInf) ) then
+  begin
+    Select;
+  end;
+end;

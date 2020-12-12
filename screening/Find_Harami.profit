@@ -1,0 +1,49 @@
+// Desenvolvido por
+// https://gist.github.com/smota
+//
+// 04/12/2020
+//
+// Identifica formação do padrão HARAMI DE ALTA ou BAIXA
+// https://br.advfn.com/educacional/candlestick/harami-de-alta
+// https://br.advfn.com/educacional/candlestick/harami-de-baixa
+//
+// Pode ser usada para screening e coloração
+//
+var
+  candleAnteriorAlta : Boolean;
+  candleAtualAlta: Boolean;
+  candleEngolfado: Boolean;
+  yes : Boolean;
+
+begin
+  yes := False;
+
+  candleAnteriorAlta := (Close[1] > Open[1]);
+  candleAtualAlta := (Close > Open);
+
+  if (  candleAnteriorAlta ) then   //HARAMI DE BAIXA
+  begin
+      candleEngolfado := ( (High  < Close[1]) AND ( Low > Open[1]));
+  end
+  else      //HARAMI DE ALTA
+  begin
+      candleEngolfado := ((Low  > Close[1]) AND ( High < Open[1]));
+  end;
+
+                      
+  if ( candleEngolfado AND candleAnteriorAlta AND NOT candleAtualAlta ) then
+  begin
+       yes := True;
+  end;
+
+  if ( candleEngolfado AND NOT candleAnteriorAlta AND candleAtualAlta ) then
+  begin
+       yes := True;
+  end;
+                              
+  if ( yes ) then
+    begin
+      PaintBar(clFuchsia);
+      Select;
+    end;
+end;

@@ -1,0 +1,138 @@
+// Desenvolvido por
+// https://github.com/smota
+//
+// 10/12/2020
+//
+// Regra baseada no indicador Bollinger Band Width
+// Referência:
+//
+//
+
+input
+  K1_Periodos(21);
+  K1_Desvio(2.0);
+  LimiteOperacao(1730);
+  TamanhoMao(1);
+
+  StopLossTicks(30);
+  StopGainTicks(60);
+
+var
+  fStopOperation : Boolean;
+  fProntoCompra : Boolean;
+  fProntoVenda : Boolean;
+  fBreak : Boolean;
+
+  vK1_Sup : Float;
+  vK1_Inf : Float;
+
+  vStopLoss : Float;
+  vStopGain : Float;
+
+  vFechaOper : Float;
+  
+begin
+
+  if( (Year(Date) = 2020) AND (Month(Date) = 12) AND (DayOfMonth(Date) = 9) ) then
+  begin
+     fBreak := True;
+  end;
+
+  //FINALIZA OPERACOES
+  if ( (LimiteOperacao > 0) AND (Time > LimiteOperacao) ) then
+  begin
+     fStopOperation := True;
+  end
+  else
+  begin
+     fStopOperation := False;
+  end;    
+  //FINALIZA OPERACOES                                           
+
+  //HORARIO DE OPERACAO
+  if ( (NOT fStopOperation) ) then
+  begin
+      vK1_Sup := KeltnerCh(K1_Desvio, K1_Periodos, 1)|0|;
+      vK1_Inf := KeltnerCh(K1_Desvio, K1_Periodos, 1)|1|;
+
+      //PREPARA OPERACAO
+      if ( (NOT IsBought) AND (NOT IsSold) ) then
+      begin
+         //COMPRA
+         if ( fProntoCompra ) then
+         begin
+             vStopLoss := Close - StopLossTicks;
+             vStopGain := Close + StopGainTicks;
+             PaintBar(clWhite);
+             SendOrder(osBuy, otLimit, TamanhoMao, Close, Close - 5); //ENTRA
+             SendOrder(osSell, otStopLimit, TamanhoMao, vStopLoss, vStopLoss - 5); //STOPLOSS
+             SendOrder(osSell, otStopLimit, TamanhoMao, vStopGain, vStopGain - 5); //STOP GAIN 
+         end;
+         //COMPRA
+
+         //VENDA
+         if ( fProntoVenda ) then
+         begin
+             vStopLoss := Close + StopLossTicks;
+             vStopGain := Close - StopGainTicks;
+             PaintBar(clBlue);
+             SendOrder(osSell, otLimit, TamanhoMao, Close, Close + 5);
+             SendOrder(osBuy, otStopLimit, TamanhoMao, vStopLoss, vStopLoss - 5);
+             SendOrder(osBuy, otStopLimit, TamanhoMao, vStopGain, vStopGain - 5);
+         end;
+         //VENDA
+      end;
+      //ENTRA NA OPERACAO
+
+      //VALIDA COMPRA
+      if ( (Close[1] < vK1_Inf) AND (Close > vK1_Inf) )then 
+      begin
+          fProntoCompra := True;
+      end
+      else
+      begin
+          fProntoCompra := False;
+      end;
+      //VALIDA COMPRA
+      
+      //VALIDA VENDA
+      if ( (Close[1] > vK1_Sup) AND (Close < vK1_Sup) )then 
+      begin
+          fProntoVenda := True;
+      end
+      else
+      begin
+          fProntoVenda := False;
+      end;
+      //VALIDA VENDA
+
+      //SAI DA OPERACAO
+      if ( ( (IsBought) OR (IsSold) ) AND
+            ( ( (vStopGain > Low) AND (vStopGain < High) ) OR
+              ( (vStopLoss > Low) AND (vStopLoss < High) ) )
+      ) then
+      begin
+          PaintBar(clMaroon);
+          ClosePosition;
+          CancelPendingOrders;
+      end;
+      //SAI DA OPERACAO
+
+  end;
+  //HORARIO DE OPERACAO
+
+  //FECHA OPERACAO NO DIA
+  if ( (IsBought OR IsSold) AND (fStopOperation) ) then
+  begin
+      PaintBar(clGray);
+
+      if ( IsBought ) then
+          SellToCoverAtMarket(TamanhoMao);
+
+      if ( IsSold ) then
+          BuyToCoverAtMarket(TamanhoMao);
+
+  end;
+  //FECHA OPERACAO NO DIA 
+ 
+end; //Close     

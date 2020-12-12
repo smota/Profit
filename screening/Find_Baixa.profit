@@ -1,0 +1,27 @@
+// Desenvolvido por
+// SAMUEL MOTA <samuelmota@gmail.com>
+//
+// 02/12/2020
+//
+// Regra baseada no artigo:
+// https://online.projetoos10porcento.com.br/forum/198/utilizando-o-screening-profit-tendency-hunter/
+//
+// Identifica oportunidades de entrada para VENDA
+//
+// Recomendação de Execução:
+//  SWING: 1 Dia
+//  DAY: 15 Minutos
+//
+
+input
+  MM_Longa(200);
+  MM_Ref(20);
+  MM_Rapida(8);
+begin
+  if( (Media(MM_Ref, Close) < Media(MM_Longa, Close)[1]) AND
+      (Media(MM_Rapida, Close) < Media(MM_Ref, Close)[1]) AND
+      (Close < Media(MM_Ref, Close)[1]) ) then
+     begin
+       Select;
+     end;
+end;
